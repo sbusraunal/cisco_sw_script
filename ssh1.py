@@ -134,7 +134,7 @@ def get_inv(device_ip, row_number,chassis_sn_counter,power_sn_counter):
 
 			#***********************************************************power seri no
 
-			elif power_sn_add < 2 and "wan" in descr.lower():
+			elif power_sn_add < 2 and "power" in descr.lower():
 				power_pid = str(row[counter+1][0]).replace("PID: ","")
 				power_sn = str(row[counter+1][2]).replace("SN: ","")
 				if power_sn_add == 0:
