@@ -145,10 +145,14 @@ def get_inv(device_ip, row_number,chassis_sn_counter,power_sn_counter):
 		counter = 3 #row'daki ilk dolu yerin index numarası
 		command = "show inventory"
 		device_type_number = 2
+	elif "IE3000" in device_model[chassis_sn_counter]:
+		counter = 1 #row'daki ilk dolu yerin index numarası
+		command = "show inventory"
+		device_type_number = 3
 	else:
 		counter = 1 #row'daki ilk dolu yerin index numarası
 		command = "show inventory"
-		device_type_number = 3	
+		device_type_number = 4	
 
 	ssh = paramiko.SSHClient()
 	ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -176,16 +180,17 @@ def get_inv(device_ip, row_number,chassis_sn_counter,power_sn_counter):
 		pid = str(row[counter+1][0]).replace("PID: ","")
 		#************************************************************chassis seri no
 		if "c36xx" in descr.lower():
-			a=1
+			a=1		
 		elif device_type_number == 1 and "chassis" in name.lower():# n7k ve n3k için kontrol edilmeli
+			a=1
+		elif "fan" in descr.lower():
 			a=1
 		elif device_type_number != 1 and "chassis" in name.lower():# n7k ve n3k için kontrol edilmeli
 			chassis_name = str(row[counter+1][0]).replace("PID: ","")
 			chassis_sn = str(row[counter+1][2]).replace("SN: ","")
 			ws1['R'+str(chassis_sn_counter+1)] = str(chassis_name.replace("\"",""))
 			ws1['S'+str(chassis_sn_counter+1)] = str(chassis_sn)
-		elif "fan" in descr.lower():
-			a=1
+		
 		elif chassis_sn_add < 5 and descr[0]=="\"" and descr[1]=="W" and descr[2]=="S" :
 			chassis_name = str(row[counter+1][0]).replace("PID: ","")
 			chassis_sn = str(row[counter+1][2]).replace("SN: ","")
@@ -211,6 +216,22 @@ def get_inv(device_ip, row_number,chassis_sn_counter,power_sn_counter):
 			ws1['R'+str(chassis_sn_counter+1)] = str(chassis_name.replace("\"",""))
 			ws1['S'+str(chassis_sn_counter+1)] = str(chassis_sn)
 
+		elif chassis_sn_add < 4 and descr[0]=="\"" and descr[1]=="I" and descr[2]=="E" :#IE3000
+			chassis_name = str(row[counter+1][0]).replace("PID: ","")
+			chassis_sn = str(row[counter+1][2]).replace("SN: ","")
+			if "Module in slot 1" in name.lower():
+				ws1['R'+str(chassis_sn_counter+1)] = str(chassis_name.replace("\"",""))
+				ws1['S'+str(chassis_sn_counter+1)] = str(chassis_sn)
+			elif "Module in slot 2" in name.lower():
+				ws1['T'+str(chassis_sn_counter+1)] = str(chassis_name.replace("\"",""))
+				ws1['U'+str(chassis_sn_counter+1)] = str(chassis_sn)
+			elif "Module in slot 3" in name.lower():
+				ws1['V'+str(chassis_sn_counter+1)] = str(chassis_name.replace("\"",""))
+				ws1['W'+str(chassis_sn_counter+1)] = str(chassis_sn)
+			else: 
+				print("IE300 Stack device has more than 3 chassis, please check this device!!"+str(device_ip)+"!!")
+			chassis_sn_add +=1
+		
 		#***********************************************************power seri no POWER SUPPLY NUUMBER İLE KONTROL EDİLEBİLİR
 
 		elif "power" in name.lower():
