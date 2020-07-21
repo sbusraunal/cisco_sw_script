@@ -2,8 +2,8 @@ import paramiko
 import getpass
 import datetime
 
-username = "admin"
-password = "admin123"
+username = ""
+password = ""
 port = 22
 
 ip_file = open("ipler.txt","r")
