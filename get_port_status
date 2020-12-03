@@ -1,0 +1,76 @@
+import paramiko
+import time
+from openpyxl import *
+
+user = "admin"
+password = "admin123"
+port = 22
+
+book="sw_ip_list.xlsx"
+wb = load_workbook(book, data_only=True)
+ws1 = wb["SW List"]
+wb.create_sheet("Port Status")
+ws2=wb["Port Status"]
+ws2['A1']="Switch IP"
+ws2['B1']="Port number"
+ws2['C1']="Port description"
+ws2["D1"]="Status"
+ws2["E1"]="Vlan"
+ws2["F1"]="duplex"
+ws2["G1"]="speed"
+ws2["H1"]="type"
+commands = 'sh int status\n'
+rownumber = 1
+ip_list = []
+sw_hostname = []
+
+for cell1 in ws1['A']:
+	ip_list.append(str(cell1.value))
+    
+ssh = paramiko.SSHClient()
+ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+for x in range(1, len(ip_list)):
+    ip = ip_list[x]
+    print(x,"****",ip,"***bilgiler alınıyor")
+    ssh.connect(ip,port,user,password,timeout=10)
+    channel = ssh.invoke_shell()
+    channel.send(commands)       
+    while not channel.recv_ready():
+        time.sleep(1)
+    out = channel.recv(2048)
+    out = str(out)   
+    tmp = []
+    for element in out[0:-1].split('\\r\\n'):
+        tmp.append(str(element))    
+    for i in range(4,len(tmp)-1):
+       temp = str(tmp[i])
+       t = dict(portNO=temp[0:7],Name=temp[8:26],status=temp[27:39],vlan=temp[40:52],duplex=temp[53:60],speed=temp[61:65],Type=temp[66:78])
+       rownumber+=1
+       ws2['A'+str(rownumber)] = str(ip)
+       for i in t.items():     
+             if i[0] == 'portNO': 
+                 ws2['B'+str(rownumber)] = str(i[1])
+                 wb.save(book)  
+             elif i[0] == 'Name':
+                 ws2['C'+str(rownumber)] = str(i[1])
+                 wb.save(book)  
+             elif i[0] =='status': 
+                 ws2['D'+str(rownumber)] = str(i[1])
+                 wb.save(book)  
+             elif i[0] =='vlan': 
+                 ws2['E'+str(rownumber)] = str(i[1])
+                 wb.save(book)  
+             elif i[0] =='duplex': 
+                 ws2['F'+str(rownumber)] = str(i[1])
+                 wb.save(book)  
+             elif i[0] =='speed':
+                 ws2['G'+str(rownumber)] = str(i[1])
+                 wb.save(book)  
+             elif i[0] =='Type':
+                 ws2['H'+str(rownumber)] = str(i[1])
+                 wb.save(book)  
+             else:
+                 print("invalid value")
+                 wb.save(book)
+    ssh.close()
