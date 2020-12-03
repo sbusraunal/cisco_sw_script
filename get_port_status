@@ -13,14 +13,14 @@ wb.create_sheet("Port Status")
 ws2=wb["Port Status"]
 ws2['A1']="Switch IP"
 ws2['B1']="Port number"
-ws2['C1']="MAC Address"
-ws2['D1']="Port description"
+ws2['D1']="MAC Address"
+ws2['C1']="Port description"
 ws2["E1"]="Status"
 ws2["F1"]="Vlan"
 ws2["G1"]="duplex"
 ws2["H1"]="speed"
 ws2["I1"]="type"
-commands = ['sh int status\n','sh mac-address-table interface ']
+commands = ['sh int status','sh mac-address-table interface ']
 rownumber = 1
 ip_list = []
 sw_hostname = []
@@ -32,68 +32,62 @@ ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
 for x in range(1, len(ip_list)):
-    ip = ip_list[x]
-    print(x,"****",ip,"***bilgiler alınıyor")
-    port = 22
-    ssh.connect(ip,port,user,password,timeout=10)
-    channel = ssh.invoke_shell()
-    channel.send(commands[0])       
-    while not channel.recv_ready():
-        time.sleep(1)
-    out = channel.recv(2048)
-    out = str(out)   
-    tmp = []
-    for element in out[0:-1].split('\\r\\n'):
-        tmp.append(str(element))    
-    for i in range(4,len(tmp)-1):
-       temp = str(tmp[i])
-       t = dict(portNO=temp[0:7],Name=temp[8:26],status=temp[27:39],vlan=temp[40:52],duplex=temp[53:60],speed=temp[61:65],Type=temp[66:78])
-       rownumber+=1
-       port="xxx"
-       ws2['A'+str(rownumber)] = str(ip)
-       for i in t.items():     
-             if i[0] == 'portNO': 
-                 ws2['B'+str(rownumber)] = str(i[1])
-                 port=str(i[1])
-                 wb.save(book)  
-             elif i[0] == 'Name':
-                 ws2['C'+str(rownumber)] = str(i[1])
-                 wb.save(book)  
-             elif i[0] =='status': 
-                 ws2['E'+str(rownumber)] = str(i[1])
- #***********************************************************************MAC
-                 if str(i[1]).find("connected") != 1:
-                     command = commands[1]+port+"\n"
-                     print(command)
-                     channel.send(command)
-                     while not channel.recv_ready():
-                         time.sleep(1)
-                     outmac = channel.recv(2048)
-                     outmac = str(outmac)
-                     outmac=outmac.replace("b\'","")
-                     tx=[]
-                     for element in outmac[0:-1].split('\\r\\n'):
-                         tx.append(str(element))
-                     macaddl= str(tx[5])
-                     mac=macaddl[8:21]
-                     ws2['D'+str(rownumber)] = str(i[1])
-                     wb.save(book) 
- #***********************************************************************MAC
-                 wb.save(book)
-             elif i[0] =='vlan': 
-                 ws2['F'+str(rownumber)] = str(i[1])
-                 wb.save(book)  
-             elif i[0] =='duplex': 
-                 ws2['G'+str(rownumber)] = str(i[1])
-                 wb.save(book)  
-             elif i[0] =='speed':
-                 ws2['H'+str(rownumber)] = str(i[1])
-                 wb.save(book)  
-             elif i[0] =='Type':
-                 ws2['I'+str(rownumber)] = str(i[1])
-                 wb.save(book)  
-             else:
-                 print("invalid value")
-                 wb.save(book)
-
-    ssh.close()
+    if(str(ip_list[x]).lower() != "none"):
+        ip = ip_list[x]
+        print(x,"****",ip,"***bilgiler alınıyor")
+        port = 22
+        ssh.connect(ip,port,user,password,timeout=10)
+        channel = ssh.invoke_shell()
+        channel.send(commands[0]+"\n")       
+        while not channel.recv_ready():
+            time.sleep(1)
+        out = channel.recv(2048)
+        out = str(out)   
+        cnt = out.find(str(commands[0]))
+        tmp = []
+        for element in out[cnt:-1].split('\\r\\n'):
+            tmp.append(str(element)) 
+        for i in range(4,len(tmp)-1):
+            rownumber +=1 
+            temp = str(tmp[i])
+            portNO=temp[0:7]
+            portNO=portNO.replace(" ","")
+            ws2['B'+str(rownumber)] = portNO
+            Name=temp[8:26]
+            ws2['C'+str(rownumber)] = Name
+            status=temp[27:39]
+            status=status.replace(" ","")
+            ws2['E'+str(rownumber)] = status
+            vlan=temp[40:52]
+            vlan=vlan.replace(" ","")
+            ws2['F'+str(rownumber)] = vlan
+            duplex=temp[53:60]
+            duplex=duplex.replace(" ","")
+            ws2['G'+str(rownumber)] = duplex
+            speed=temp[61:65]
+            speed=speed.replace(" ","")
+            ws2['H'+str(rownumber)] = speed
+            Type=temp[66:78]
+            Type=Type.replace(" ","")
+            ws2['I'+str(rownumber)] = Type
+            ws2['A'+str(rownumber)] = str(ip)
+            wb.save(book)
+            if status.find("connected") != -1:
+                        command = commands[1]+portNO
+                        channel.send(command+"\n")
+                        while not channel.recv_ready():
+                            time.sleep(1)
+                        outmac = channel.recv(2048)
+                        outmac = str(outmac)
+                        outmac=outmac.replace("b\'","")
+                        tx=[]
+                        for element in outmac[0:-1].split('\\r\\n'):
+                            tx.append(str(element))
+                        print(tx)    
+                        macaddl= str(tx[6])                         
+                        mac=macaddl[8:21]
+                        ws2['D'+str(rownumber)] = mac
+                        wb.save(book) 
+        ssh.close()
+    else:
+        print("işlem tamamlandı.")
