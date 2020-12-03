@@ -62,7 +62,7 @@ for x in range(1, len(ip_list)):
              elif i[0] =='status': 
                  ws2['E'+str(rownumber)] = str(i[1])
  #***********************************************************************MAC
-                 if str(i[1]).find("notconnect") != 1:
+                 if str(i[1]).find("connected") != 1:
                      command = commands[1]+port+"\n"
                      print(command)
                      channel.send(command)
@@ -74,7 +74,7 @@ for x in range(1, len(ip_list)):
                      tx=[]
                      for element in outmac[0:-1].split('\\r\\n'):
                          tx.append(str(element))
-                     macaddl= str(tx[6])
+                     macaddl= str(tx[5])
                      mac=macaddl[8:21]
                      ws2['D'+str(rownumber)] = str(i[1])
                      wb.save(book) 
