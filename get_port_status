@@ -3,7 +3,7 @@ import time
 from openpyxl import *
 
 user = "admin"
-password = "admin123"
+password = "aselsan"
 port = 22
 
 book="sw_ip_list.xlsx"
@@ -20,7 +20,7 @@ ws2["F1"]="Vlan"
 ws2["G1"]="duplex"
 ws2["H1"]="speed"
 ws2["I1"]="type"
-commands = ['sh int status','sh mac-address-table interface ']
+commands = ['sh int status','sh mac address-table interface ','terminal len 50']
 rownumber = 1
 ip_list = []
 sw_hostname = []
@@ -38,22 +38,24 @@ for x in range(1, len(ip_list)):
         port = 22
         ssh.connect(ip,port,user,password,timeout=10)
         channel = ssh.invoke_shell()
-        channel.send(commands[0]+"\n")       
-        while not channel.recv_ready():
-            time.sleep(1)
+        channel.send(commands[2]+"\n")
+        time.sleep(2)
+        channel.send(commands[0]+"\n")
+        time.sleep(15)
         out = channel.recv(2048)
         out = str(out)   
+        print(out)
         cnt = out.find(str(commands[0]))
         tmp = []
         for element in out[cnt:-1].split('\\r\\n'):
             tmp.append(str(element)) 
-        for i in range(4,len(tmp)-1):
+        for i in range(3,len(tmp)-1):
             rownumber +=1 
             temp = str(tmp[i])
-            portNO=temp[0:7]
+            portNO=temp[0:8]
             portNO=portNO.replace(" ","")
             ws2['B'+str(rownumber)] = portNO
-            Name=temp[8:26]
+            Name=temp[10:26]
             ws2['C'+str(rownumber)] = Name
             status=temp[27:39]
             status=status.replace(" ","")
@@ -75,8 +77,7 @@ for x in range(1, len(ip_list)):
             if status.find("connected") != -1:
                         command = commands[1]+portNO
                         channel.send(command+"\n")
-                        while not channel.recv_ready():
-                            time.sleep(1)
+                        time.sleep(3)
                         outmac = channel.recv(2048)
                         outmac = str(outmac)
                         outmac=outmac.replace("b\'","")
